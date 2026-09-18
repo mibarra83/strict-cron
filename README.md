@@ -78,9 +78,9 @@ sched, err := cron.Parse("0 0 15 * 1", cron.Lenient())
 
 ## Status
 
-Early skeleton. The parser and `Next()` are functional and covered by the
-examples above, but there's no test suite yet and the public API may
-still change.
+Early skeleton. The parser and `Next()` are functional and covered by a
+table-driven test suite (`go test ./...`), but the public API may still
+change.
 
 ## License
 
