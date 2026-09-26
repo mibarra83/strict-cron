@@ -75,6 +75,10 @@ sched, err := cron.Parse("0 0 15 * 1", cron.Lenient())
 - `*/15`, `1-10/2` — a step, optionally over a range
 - `JAN`-`DEC`, `SUN`-`SAT` — three-letter names for month and
   day-of-week fields (case-sensitive unless `Lenient()` is passed)
+- `@yearly` (or `@annually`), `@monthly`, `@weekly`, `@daily` (or
+  `@midnight`), `@hourly` — shorthand for the whole expression, expanded
+  before parsing. `@reboot` is not supported: it means "on startup", not a
+  point in calendar time, so it has no `Next()`.
 
 ## Status
 

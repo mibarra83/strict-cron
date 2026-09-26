@@ -32,10 +32,27 @@ func Lenient() Option {
 	return func(c *config) { c.lenient = true }
 }
 
+// scheduleAliases maps the predefined schedule shorthands to the five-field
+// expression they expand to. "@reboot" is deliberately absent: it means "on
+// startup", which isn't a point in calendar time and has no Next().
+var scheduleAliases = map[string]string{
+	"@yearly":   "0 0 1 1 *",
+	"@annually": "0 0 1 1 *",
+	"@monthly":  "0 0 1 * *",
+	"@weekly":   "0 0 * * 0",
+	"@daily":    "0 0 * * *",
+	"@midnight": "0 0 * * *",
+	"@hourly":   "0 * * * *",
+}
+
 // Parse parses a standard five-field cron expression: minute hour
 // day-of-month month day-of-week. Fields accept "*", single values,
 // comma-separated lists, ranges ("a-b"), and steps ("a-b/c" or "*/c").
 // Months and days of week also accept three-letter names (JAN, SUN, ...).
+//
+// It also accepts the predefined shorthands "@yearly" (or "@annually"),
+// "@monthly", "@weekly", "@daily" (or "@midnight"), and "@hourly" in place
+// of the five fields.
 //
 // By default Parse is strict: it rejects anything a portable cron reader
 // could interpret two different ways. Pass Lenient() to relax that.
@@ -46,6 +63,17 @@ func Parse(expr string, opts ...Option) (*Schedule, error) {
 	}
 
 	fields := strings.Fields(expr)
+	if len(fields) == 1 && strings.HasPrefix(fields[0], "@") {
+		key := fields[0]
+		if cfg.lenient {
+			key = strings.ToLower(key)
+		}
+		resolved, ok := scheduleAliases[key]
+		if !ok {
+			return nil, fmt.Errorf("cron: unrecognized schedule alias %q", fields[0])
+		}
+		fields = strings.Fields(resolved)
+	}
 	if len(fields) != 5 {
 		return nil, fmt.Errorf("cron: expected 5 fields (minute hour dom month dow), got %d in %q", len(fields), expr)
 	}

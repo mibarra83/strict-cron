@@ -21,6 +21,52 @@ func TestParseValid(t *testing.T) {
 	}
 }
 
+func TestParseScheduleAliases(t *testing.T) {
+	cases := map[string]string{
+		"@yearly":   "0 0 1 1 *",
+		"@annually": "0 0 1 1 *",
+		"@monthly":  "0 0 1 * *",
+		"@weekly":   "0 0 * * 0",
+		"@daily":    "0 0 * * *",
+		"@midnight": "0 0 * * *",
+		"@hourly":   "0 * * * *",
+	}
+	for alias, expanded := range cases {
+		got, err := Parse(alias)
+		if err != nil {
+			t.Errorf("Parse(%q) unexpected error: %v", alias, err)
+			continue
+		}
+		want, err := Parse(expanded)
+		if err != nil {
+			t.Fatalf("Parse(%q) unexpected error: %v", expanded, err)
+		}
+		if *got != *want {
+			t.Errorf("Parse(%q) = %+v, want %+v (expansion of %q)", alias, got, want, expanded)
+		}
+	}
+}
+
+func TestParseScheduleAliasUnrecognized(t *testing.T) {
+	cases := []string{"@reboot", "@Daily", "@every_minute", "@"}
+	for _, expr := range cases {
+		if _, err := Parse(expr); err == nil {
+			t.Errorf("Parse(%q) = nil error, want error for unrecognized alias", expr)
+		}
+	}
+}
+
+func TestParseScheduleAliasLenientCase(t *testing.T) {
+	got, err := Parse("@Daily", Lenient())
+	if err != nil {
+		t.Fatalf("Parse(%q, Lenient()) unexpected error: %v", "@Daily", err)
+	}
+	want := mustParse(t, "@daily")
+	if *got != *want {
+		t.Errorf("Parse(%q, Lenient()) = %+v, want %+v", "@Daily", got, want)
+	}
+}
+
 func TestParseFieldCount(t *testing.T) {
 	cases := []string{"* * * *", "* * * * * *", "*"}
 	for _, expr := range cases {
